@@ -12,28 +12,31 @@ This repository contains SQL queries and analysis for the Stack Overflow public 
     - [Dataset](#dataset)
   - [Task 1: Tag Analysis](#task-1-tag-analysis)
     - [Query: Single Tag Analysis](#query-single-tag-analysis)
-    - [Results](#results)
-    - [Findings](#findings)
+      - [Results](#results)
+      - [Findings](#findings)
     - [Query: Tag Combination Analysis](#query-tag-combination-analysis)
-    - [Results](#results-1)
-    - [Findings](#findings-1)
+      - [Results](#results-1)
+      - [Findings](#findings-1)
   - [Task 2: `Python` vs `dbt` YoY Analysis](#task-2-python-vs-dbt-yoy-analysis)
     - [Query: Python vs dbt YoY Analysis](#query-python-vs-dbt-yoy-analysis)
-    - [Results](#results-2)
-    - [Findings](#findings-2)
+      - [Results](#results-2)
+      - [Findings](#findings-2)
   - [Task 3: Factors Beyond Tags](#task-3-factors-beyond-tags)
     - [Query: Reputation](#query-reputation)
-    - [Results](#results-3)
-    - [Findings](#findings-3)
+      - [Results](#results-3)
+      - [Findings](#findings-3)
     - [Query: Veterancy](#query-veterancy)
-    - [Results](#results-4)
-    - [Findings](#findings-4)
+      - [Results](#results-4)
+      - [Findings](#findings-4)
     - [Query: Length of code snippets](#query-length-of-code-snippets)
-    - [Findings](#findings-5)
+      - [Results](#results-5)
+      - [Findings](#findings-5)
     - [Query: Title and Length of code snippets](#query-title-and-length-of-code-snippets)
-    - [Findings](#findings-6)
+      - [Results](#results-6)
+      - [Findings](#findings-6)
     - [Query: Veterancy and questions best-practices](#query-veterancy-and-questions-best-practices)
-    - [Findings](#findings-7)
+      - [Results](#results-7)
+      - [Findings](#findings-7)
 
 ---
 
@@ -59,15 +62,15 @@ bigquery-public-data.stackoverflow.users
 
 > What tags on a Stack Overflow question lead to the most answers and the highest rate of approved answers for the current year? What tags lead to the least? How about combinations of tags?
 
-### Query: [Single Tag Analysis](queries/task01/01a_single_tag_analysis.sql#L7)
+#### Query: [Single Tag Analysis](queries/task01/01a_single_tag_analysis.sql#L7)
 
 - **Performance consideration:** 
   - Since there's no partitioning column in this public dataset table, the main way to reduce costs is to avoid querying unnecessary columns.
   - We should also avoid `COUNT DISTINCT` when possible. It's fine here because we're dealing with a manageable number of records, but for larger datasets it can cause performance issues. If that happens and we can tolerate some accuracy loss, `APPROX_COUNT_DISTINCT` is a good alternative. It's a statistical estimate that gets pretty close to the exact count.
-
+  <br>
   <ul>
     <details>
-      <summary>Query we can use to check the partitioned column for <code>posts_questions</code> table in BigQuery.</summary>
+      <summary>Query used to check the partitioned column for <code>posts_questions</code> table in BigQuery.</summary>
 
     ```sql
     SELECT
@@ -84,7 +87,8 @@ bigquery-public-data.stackoverflow.users
 
 - Assumptions:
   - **Current year:** The "current year" for this assignment is `2022` (the most recent event in this table is from `2022-09-25 05:56:32.863000 UTC`), so I ran the analysis on posts from that year.
-
+  - **Irrelevant data**: To filter out low-volume tags, I set a threshold of `1000` questions.
+  <br>
   <ul>
     <details>
       <summary>Query used to check the most recent creation timestamp in <code>posts_questions</code>.</summary>
@@ -99,9 +103,7 @@ bigquery-public-data.stackoverflow.users
     </details>
   </ul>
 
-  - **Irrelevant data**: To filter out low-volume tags, we set a threshold of `1000` questions.
-
-### Results
+#### Results
 
 <details>
   <summary>
@@ -193,7 +195,7 @@ bigquery-public-data.stackoverflow.users
 
 </details>
 
-### Findings
+#### Findings
 - Niche tools like `awk` (66%), `dplyr` (64%), and `sed` (62%) achieve the highest acceptance rates;
 - Tags like `pandas` (50%), `dataframe` (52%), and `arrays` (46%) appear in both top volume and top acceptance rankings.
 
@@ -202,7 +204,7 @@ bigquery-public-data.stackoverflow.users
 - **Performance consideration:** 
   - For this solution, I used a [recursive CTE](https://docs.cloud.google.com/bigquery/docs/recursive-ctes) to generate tag combinations. This approach works here because we have low data volume and a clear stop condition. By default, BigQuery caps recursive iterations at 500 due to the heavy computation involved, but since the most tags on any question in our dataset is 5, we'll never exceed 4 distinct tags per combination.
 
-### Results
+#### Results
 
 
 <details>
@@ -315,7 +317,7 @@ bigquery-public-data.stackoverflow.users
   - **Single-tag posts only**: The query filters for posts where the entire `tags` field equals exactly `'dbt'` or `'python'`. This excludes posts like `'python|pandas'` to ensure a fair comparison between the two technologies in isolation;
   - **Data availability**: The `dbt` tag only appears from 2020 onwards, while `python` has data going back to 2012 in this dataset.
 
-### Results
+#### Results
 
 <details>
   <summary>
@@ -342,7 +344,7 @@ bigquery-public-data.stackoverflow.users
 </details>
 
 
-### Findings
+#### Findings
 - Python peaked at 16K questions in 2020, then dropped 21% by 2022. Acceptance rate fell from 72% (2012) to 35% (2022), suggesting increased question complexity or community fatigue;
 - dbt is still a small ecosystem. The acceptance rate dropped sharply from 42% to 26% in 2021, but the amount of records is not comparable with Python tag itself;
 - Python's unanswered rate jumped from 1% to 26% over the decade. This suggests the community is struggling to keep up with question volume.
@@ -359,7 +361,7 @@ bigquery-public-data.stackoverflow.users
   - My first hypothesis was that users with higher reputation (more about this [here](https://internal.stackoverflow.help/en/articles/8775594-reputation-and-voting)) create better questions.
   - I set the start date of the analysis to `2013` to cover ten years of data.
 
-### Results
+#### Results
 
 <details>
   <summary>
@@ -401,13 +403,13 @@ bigquery-public-data.stackoverflow.users
 
 </details>
 
-### Findings
+#### Findings
 - The issue with this approach is that reputation in `bigquery-public-data.stackoverflow.users` reflects the user's latest state, not their reputation at the time they wrote the question. So I dropped this analysis.
 - Instead, I looked at whether more experienced users write better questions. To test this, I checked how many questions each user had already asked (within the public dataset) before posting each new question. 
 
 ### Query: [Veterancy](queries/task03/03b_veterancy.sql)
 
-### Results
+#### Results
 
 <details>
   <summary>
@@ -423,11 +425,13 @@ bigquery-public-data.stackoverflow.users
 
 </details>
 
-### Findings
+#### Findings
 - Users with more experience get better answer rates. This likely means they've learned to write better questions over time.
 - To dig deeper, I looked at how questions are structured, specifically how much code they include. We can measure this by counting characters inside `<code>` HTML blocks relative to the total question body.
 
 ### Query: [Length of code snippets](queries/task03/03c_length_of_code_snippets.sql)
+
+#### Results
 
 <details>
   <summary>
@@ -447,13 +451,15 @@ bigquery-public-data.stackoverflow.users
 
 </details>
 
-### Findings
+#### Findings
 - Questions with mostly code (60%+) get lower answer and acceptance rates. They tend to be long and hard to parse, which makes them less effective;
 - Including some code (1-20%) improves your chances of getting an answer and getting it accepted. But  
 too much code has the opposite effect;
 - The takeaway: Brevity matters. Next, I looked at title patterns. Since moderate code correlates with better responses, I wanted to see if how the user phrase the title also matters. I used regex to classify titles by type.
 
 ### Query: [Title and Length of code snippets](queries/task03/03d_title_and_length_of_code.sql)
+
+#### Results
 
 <details>
   <summary>
@@ -485,7 +491,7 @@ too much code has the opposite effect;
 
 </details>
 
-### Findings
+#### Findings
 - "What" and "How-to" titles get the best answer and acceptance rates, especially with 1-20% code. "What" questions in that range hit acceptance rates above 59%;
 - "Error/Problem" titles perform the worst across the board. When combined with high code (20%+), acceptance drops below 38%;
 - Clear titles + focused code = better questions;
@@ -493,6 +499,7 @@ too much code has the opposite effect;
 
 ### Query: [Veterancy and questions best-practices](queries/task03/03e_veterancy_and_best_practices.sql)
 
+#### Results
 
 <details>
   <summary>
@@ -508,7 +515,7 @@ too much code has the opposite effect;
 
 </details>
 
-### Findings
+#### Findings
 - Veterans include code way more often: only 51% post without code vs. 79% for first-timers;
 - Experienced users lean toward "How-to", "Why", and "What" titles, and "Error/Problem" titles slightly drop off;
 - Finally, veterans learn what works moderate code, clearer titles.
